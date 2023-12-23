@@ -1,5 +1,3 @@
-use serde::de;
-
 use crate::data::*;
 use crate::prelude::*;
 use crate::state::*;
@@ -61,7 +59,7 @@ pub fn system_input_box(
     }
 
     match query.iter_mut().next() {
-        Some((mut input_box, mut text)) => {
+        Some((mut _input_box, mut text)) => {
             for ev in evr_char.read() {
                 if ev.char == '\u{8}' {
                     text.sections[0].value.pop();
@@ -79,16 +77,16 @@ pub fn system_input_box(
 pub fn system_start_game(
     mut query: Query<(&mut InputBox, &mut Text)>,
     mut event: EventWriter<StartGameEvent>,
-    mut kbd: ResMut<Input<KeyCode>>,
+    kbd: ResMut<Input<KeyCode>>,
     state: Res<State<GameState>>,
 ) {
     if *state != GameState::Settings {
         return;
     }
 
-    for (input_box, text) in query.iter_mut() {
+    for (_input_box, text) in query.iter_mut() {
         if kbd.just_pressed(KeyCode::Return) {
-            let mut parts: Vec<_> = text.sections[0].value.split('-').collect();
+            let parts: Vec<_> = text.sections[0].value.split('-').collect();
             if parts.len() != 2 {
                 return;
             }
@@ -107,6 +105,12 @@ pub fn system_start_game(
                 Ok(v) => max = v,
                 Err(_) => return,
             }
+            if max > 9 {
+                return;
+            }
+            if max < min {
+                return;
+            }
 
             event.send(StartGameEvent { min, max });
         }
@@ -118,7 +122,7 @@ pub fn system_start_game_event_listener(
     mut despawn_input_box: EventWriter<DespawnInputBoxEvent>,
     mut state: ResMut<NextState<GameState>>,
 ) {
-    for ev in event.read() {
+    for _ in event.read() {
         state.set(GameState::Playing);
         despawn_input_box.send(DespawnInputBoxEvent);
     }
@@ -129,7 +133,7 @@ pub fn system_end_game_event_listener(
     mut spawn_input_box: EventWriter<SpawnInputBoxEvent>,
     mut state: ResMut<NextState<GameState>>,
 ) {
-    for ev in event.read() {
+    for _ in event.read() {
         state.set(GameState::Settings);
         spawn_input_box.send(SpawnInputBoxEvent);
     }

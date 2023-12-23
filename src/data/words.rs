@@ -20,17 +20,21 @@ impl WordsFile {
         Self::from_str(&contents)
     }
 
-    pub fn slice(&self, start: usize, end: usize) -> HashSet<&String> {
-        let mut result = HashSet::new();
-        self.words[start..end + 1]
+    pub fn slice(&self, start: usize, end: usize) -> Vec<String> {
+        let mut result = Vec::new();
+        self.words[start - 3..=end - 3]
             .iter()
-            .for_each(|v| result.extend(v.iter()));
+            .for_each(|v| result.extend(v.iter().map(|s| s.clone())));
         result
+    }
+
+    pub fn exists(&self, word: &str) -> bool {
+        self.words[word.len() - 3].contains(word)
     }
 }
 
 #[derive(Debug, Resource)]
-pub struct AllWords(WordsFile);
+pub struct AllWords(pub WordsFile);
 
 impl Default for AllWords {
     fn default() -> Self {
@@ -39,7 +43,7 @@ impl Default for AllWords {
 }
 
 #[derive(Debug, Resource)]
-pub struct CommonWords(WordsFile);
+pub struct CommonWords(pub WordsFile);
 
 impl Default for CommonWords {
     fn default() -> Self {

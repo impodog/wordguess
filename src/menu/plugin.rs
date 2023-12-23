@@ -10,11 +10,11 @@ impl Plugin for MenuPlugin {
             .add_systems(
                 Update,
                 (
+                    system_input_box,
+                    system_start_game,
+                    system_spawn_input_box,
                     system_despawn_input_box,
                     system_end_game_event_listener,
-                    system_input_box,
-                    system_spawn_input_box,
-                    system_start_game,
                     system_start_game_event_listener,
                 ),
             );
