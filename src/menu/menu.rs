@@ -52,6 +52,7 @@ pub fn system_despawn_input_box(
 pub fn system_input_box(
     mut query: Query<(&mut InputBox, &mut Text)>,
     mut evr_char: EventReader<ReceivedCharacter>,
+    kbd: Res<Input<KeyCode>>,
     state: Res<State<GameState>>,
 ) {
     if *state != GameState::Settings {
@@ -61,10 +62,10 @@ pub fn system_input_box(
     match query.iter_mut().next() {
         Some((mut _input_box, mut text)) => {
             for ev in evr_char.read() {
-                if ev.char == '\u{8}' {
+                if kbd.just_pressed(KeyCode::Back) {
                     text.sections[0].value.pop();
                     text.set_changed();
-                } else if !ev.char.is_control() {
+                } else if ev.char.is_numeric() || ev.char == '-' {
                     text.sections[0].value.push(ev.char);
                     text.set_changed();
                 }

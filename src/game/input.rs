@@ -8,6 +8,7 @@ pub fn system_game_input(
     mut game: ResMut<GameHandler>,
     mut query: Query<(&Tile, &mut Handle<Image>, &mut Text)>,
     mut evr_char: EventReader<ReceivedCharacter>,
+    kbd: Res<Input<KeyCode>>,
     mut event: EventWriter<EndGameEvent>,
     img: Res<Images>,
     all_words: Res<AllWords>,
@@ -34,7 +35,7 @@ pub fn system_game_input(
                 game.tiles[y][x].character = Some(c);
                 game.offset += 1;
             }
-        } else if c == '\u{8}' {
+        } else if kbd.just_pressed(KeyCode::Back) {
             if game.offset > 0 {
                 game.offset -= 1;
                 for (tile, _, mut text) in query.iter_mut() {
@@ -46,9 +47,9 @@ pub fn system_game_input(
                 let (y, x) = (game.line, game.offset);
                 game.tiles[y][x].character = None;
             }
-        } else if c == '\u{1b}' {
+        } else if kbd.just_pressed(KeyCode::Escape) {
             event.send(EndGameEvent);
-        } else if c == '\u{d}' {
+        } else if kbd.just_pressed(KeyCode::Return) {
             if game.line < game.y {
                 if game.offset >= game.min
                     && game.offset <= game.max
