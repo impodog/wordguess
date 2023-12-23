@@ -9,6 +9,7 @@ pub enum TileColor {
     Red,
     Green,
     Yellow,
+    Cyan,
 }
 
 #[derive(Resource)]
@@ -32,6 +33,7 @@ pub struct GameHandler {
     pub max: usize,
     pub y: usize,
     pub x: usize,
+    pub flip: bool,
     pub line: usize,
     pub offset: usize,
     pub size: usize,
@@ -45,8 +47,22 @@ impl GameHandler {
         max * 3 / 2 - min / 2 + 1
     }
 
-    fn calc_size(yl: usize, xl: usize, window: &Window) -> usize {
-        std::cmp::min(window.width() as usize / xl, window.height() as usize / yl)
+    fn calc_size((width, height): (usize, usize), yl: usize, xl: usize) -> usize {
+        std::cmp::min(width / xl, height / yl)
+    }
+
+    fn width_height(y: usize, _x: usize, window: &Window) -> (usize, usize, bool) {
+        let flip = window.height() / y as f32 <= 60.0;
+        let height;
+        let width;
+        if flip {
+            height = window.width() as usize;
+            width = window.height() as usize;
+        } else {
+            height = window.height() as usize;
+            width = window.width() as usize;
+        }
+        (width, height, flip)
     }
 
     pub fn renew(&mut self) {
@@ -62,10 +78,11 @@ impl GameHandler {
         debug_println!("For debuggers, answer is \"{}\"!", self.ans);
     }
 
-    pub fn new(min: usize, max: usize, words: &Res<CommonWords>) -> Self {
+    pub fn new(min: usize, max: usize, window: &Window, words: &Res<CommonWords>) -> Self {
         let y = Self::calc_y(min, max);
         let x = max;
-        let size = Self::calc_size(y, x, &Window::default());
+        let (width, height, flip) = Self::width_height(y, x, window);
+        let size = Self::calc_size((width, height), y, x);
         let mut tiles = Vec::new();
         for _ in 0..y {
             let mut row = Vec::new();
@@ -83,6 +100,7 @@ impl GameHandler {
             max,
             y,
             x,
+            flip,
             line: 0,
             offset: 0,
             size,
@@ -106,19 +124,21 @@ impl GameHandler {
         let line = self.line;
         for x in 0..self.offset {
             let tile = &mut self.tiles[line][x];
-            let mut iter = list.iter();
-            let mut remove = usize::MAX;
-            let mut index = 0;
-            while let Some((c, i)) = iter.next() {
-                if *i == x && *c == tile.character.unwrap() {
-                    tile.color = TileColor::Green;
-                    remove = index;
-                    break;
+            if tile.color == TileColor::Empty {
+                let mut iter = list.iter();
+                let mut remove = usize::MAX;
+                let mut index = 0;
+                while let Some((c, i)) = iter.next() {
+                    if *i == x && *c == tile.character.unwrap() {
+                        tile.color = TileColor::Green;
+                        remove = index;
+                        break;
+                    }
+                    index += 1;
                 }
-                index += 1;
-            }
-            if remove != usize::MAX {
-                list.remove(remove);
+                if remove != usize::MAX {
+                    list.remove(remove);
+                }
             }
         }
         for x in 0..self.offset {
@@ -148,15 +168,26 @@ impl GameHandler {
         }
         for x in self.offset..self.ans.len() {
             let tile = &mut self.tiles[line][x];
-            tile.color = TileColor::Red;
+            if tile.color == TileColor::Empty {
+                tile.color = TileColor::Red;
+            }
         }
     }
 
-    pub fn test_exists(&self, all_words: &Res<AllWords>) -> bool {
+    pub fn collect_word(&self) -> String {
         let mut word = String::new();
         for x in 0..self.offset {
-            word.push(self.tiles[self.line][x].character.unwrap());
+            if let Some(c) = self.tiles[self.line][x].character {
+                word.push(c);
+            } else {
+                break;
+            }
         }
+        word
+    }
+
+    pub fn test_exists(&self, all_words: &Res<AllWords>) -> bool {
+        let word = self.collect_word();
         all_words.0.exists(&word)
     }
 }

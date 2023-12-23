@@ -21,14 +21,24 @@ pub fn system_spawn_input_box(
             InputBox,
             Text2dBundle {
                 text: Text {
-                    sections: vec![TextSection {
-                        value: "".to_string(),
-                        style: TextStyle {
-                            font: cascadia.font.clone(),
-                            font_size: 50.0,
-                            color: Color::WHITE,
+                    sections: vec![
+                        TextSection {
+                            value: "".to_string(),
+                            style: TextStyle {
+                                font: cascadia.font.clone(),
+                                font_size: 50.0,
+                                color: Color::WHITE,
+                            },
                         },
-                    }],
+                        TextSection {
+                            value: "Input Range {min>=3}-{max<=14}".to_string(),
+                            style: TextStyle {
+                                font: cascadia.font.clone(),
+                                font_size: 50.0,
+                                color: Color::CYAN,
+                            },
+                        },
+                    ],
                     ..Default::default()
                 },
                 ..Default::default()
@@ -64,10 +74,11 @@ pub fn system_input_box(
             for ev in evr_char.read() {
                 if kbd.just_pressed(KeyCode::Back) {
                     text.sections[0].value.pop();
-                    text.set_changed();
                 } else if ev.char.is_numeric() || ev.char == '-' {
                     text.sections[0].value.push(ev.char);
-                    text.set_changed();
+                    if text.sections.len() > 1 {
+                        text.sections.remove(1);
+                    }
                 }
             }
         }
@@ -106,7 +117,7 @@ pub fn system_start_game(
                 Ok(v) => max = v,
                 Err(_) => return,
             }
-            if max > 9 {
+            if max > 14 {
                 return;
             }
             if max < min {
